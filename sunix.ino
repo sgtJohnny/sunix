@@ -121,13 +121,13 @@ unsigned long last_menu = 0;
 unsigned long last_buzzer = 0;
 unsigned long ms_last = 0;
 unsigned long last_act = 0;
+unsigned long last_gps = 0;
 char incoming[15] = { };
 
 int TMZvalues[] = { 0, 0, 60, 120, 180, 210, 240, 270, 300, 330, 345, 360, 390,
-                    420, 480, 510, 525, 540, 570, 600, 630, 660, 720, 765, 780, 840, -60,
-                    -120, -180, -210, -240, -300, -360, -420, -480, -540, -570, -600, -660,
-                    -720
-                  };
+    420, 480, 510, 525, 540, 570, 600, 630, 660, 720, 765, 780, 840, -60,
+    -120, -180, -210, -240, -300, -360, -420, -480, -540, -570, -600, -660,
+    -720 };
 
 #include <Wire.h>                           //include library for I2C communication
 #include <Adafruit_NeoPixel.h>              //include library for backlight led
@@ -173,7 +173,7 @@ TimeChangeRule *tcr;     //pointer to the time change rule, use to get TZ abbrev
 time_t utc, local;
 
 extern void RTCsetTime(byte setSeconds, byte setMinutes, byte setHours,
-                       byte setWeekday, byte setMonthday, byte setMonth, byte setYear); // forward declaration
+    byte setWeekday, byte setMonthday, byte setMonth, byte setYear); // forward declaration
 
 //Definitions for Peripherals
 ClickEncoder *encoder;
@@ -266,14 +266,14 @@ void loop() {
 
 void gpsIsr(uint8_t c) {
 
-  //GPS interrupt handle
+//GPS interrupt handle
   gps.handle(c);
 
 }
 
 void gpsDebug() {
 
-  //Function for debugging purposes of the gps receiver
+//Function for debugging purposes of the gps receiver
 
   if ((millis() > 5000) && (gps.statistics.chars < 10)) {
     //DEBUG_PORT.println( F("No GPS detected: check wiring.") );
@@ -284,36 +284,37 @@ void gpsDebug() {
 
 void gpsSerialInit() {
 
-  //This function loads saved baud-rate and initializes the gps_port.
+//This function loads saved baud-rate and initializes the gps_port.
 
   byte bdrt = readEEPROM(STORAGE_ADDRESS, EEPROM_BDRT);
 
   switch (bdrt) {
-    case 1:
-      gps_port.begin(9600);
-      break;
-    case 2:
-      gps_port.begin(4800);
-      break;
-    case 3:
-      gps_port.begin(19200);
-      break;
-    case 4:
-      gps_port.begin(38400);
-      break;
-    case 5:
-      gps_port.begin(57600);
-      break;
-    case 6:
-      gps_port.begin(115200);
-      break;
+  case 1:
+    gps_port.begin(9600);
+    break;
+  case 2:
+    gps_port.begin(4800);
+    break;
+  case 3:
+    gps_port.begin(19200);
+    break;
+  case 4:
+    gps_port.begin(38400);
+    break;
+  case 5:
+    gps_port.begin(57600);
+    break;
+  case 6:
+    gps_port.begin(115200);
+    break;
   }
 
 }
 
 void exTimeSyncTest() {
 
-  //This function checks for a valid time signal from the gps device
+//This function checks for a valid time signal from the gps device
+
 
   while (gps.available() > 0) {
     fix = gps.read();
@@ -328,6 +329,7 @@ void exTimeSyncTest() {
       exTSvalid = true;
     } else {
       exTSvalid = false;
+      
     }
 
   }
@@ -335,10 +337,10 @@ void exTimeSyncTest() {
 
 void exTimeSyncSet() {
 
-  //This function will set the time from gps if the seconds are differing by two from the rtc
+//This function will set the time from gps if the seconds are differing by two from the rtc
 
-  if (gpsTime > earliestTime) {
-
+  if ((gpsTime > earliestTime) && (gpsTime > (last_gps+30))) {
+    DEBUG_PORT.println(gpsTime);
     int exYear = fix.dateTime.full_year();
     int exMonth = fix.dateTime.month;
     int exDay = fix.dateTime.date;
@@ -346,17 +348,18 @@ void exTimeSyncSet() {
     int exMinute = fix.dateTime.minutes;
     int exSecond = fix.dateTime.seconds;
 
-    if ((second() > exSecond + 2) || (second() < exSecond - 2)) {
+    if ((second() > exSecond + 5) || (second() < exSecond - 5)) {
       RTCsetTime(exSecond, exMinute, exHour, 0, exDay, exMonth, exYear);
     }
   }
   needsTS = 0;
+  last_gps = gpsTime;
 }
 
 
 void actService() {
 
-  //This function checks handles the external activiation signal
+//This function checks handles the external activiation signal
 
   if ((millis() - last_act) > (extActTime * 60000)) {
     digitalWrite(PWR, HIGH);
@@ -538,50 +541,50 @@ void menuHandler() {
   if (menu_item_active == 1) {
 
     switch (menu_item) {
-      case 2:
-        menuItemHandler(16, EEPROM_LED, 1);
-        break;
-      case 3:
-        menuItemHandler(99, EEPROM_BRIGHT, 2);
-        break;
-      case 4:
-        menuItemHandler(3, EEPROM_CYCLE, 0);
-        break;
-      case 5:
-        menuItemHandler(5, EEPROM_CMODE, 0);
-        break;
-      case 6:
-        menuItemHandler(2, EEPROM_LZ, 0);
-        break;
-      case 7:
-        menuItemHandler(4, EEPROM_BM, 0);
-        break;
-      case 8:
-        menuItemHandler(12, EEPROM_DSTE, 0);
-        break;
-      case 9:
-        menuItemHandler(2, EEPROM_AMPM, 0);
-        break;
-      case 10:
-        menuItemHandler(2, EEPROM_ACTS, 0);
-        break;
-      case 11:
-        menuItemHandler(99, EEPROM_ACTT, 0);
-        break;
-      case 12:
-        menuItemHandler(2, EEPROM_ACTP, 0);
-        break;
-      case 13:
-        menuItemHandler(6, EEPROM_BDRT, 0);
-        break;
-      case 14:
-        menuItemHandler(2, EEPROM_ENTS, 0);
-        break;
-      case 15:
-        menuItemHandler(39, EEPROM_TMZ, 0);
-        break;
-      default:
-        break;
+    case 2:
+      menuItemHandler(16, EEPROM_LED, 1);
+      break;
+    case 3:
+      menuItemHandler(99, EEPROM_BRIGHT, 2);
+      break;
+    case 4:
+      menuItemHandler(3, EEPROM_CYCLE, 0);
+      break;
+    case 5:
+      menuItemHandler(5, EEPROM_CMODE, 0);
+      break;
+    case 6:
+      menuItemHandler(2, EEPROM_LZ, 0);
+      break;
+    case 7:
+      menuItemHandler(4, EEPROM_BM, 0);
+      break;
+    case 8:
+      menuItemHandler(12, EEPROM_DSTE, 0);
+      break;
+    case 9:
+      menuItemHandler(2, EEPROM_AMPM, 0);
+      break;
+    case 10:
+      menuItemHandler(2, EEPROM_ACTS, 0);
+      break;
+    case 11:
+      menuItemHandler(99, EEPROM_ACTT, 0);
+      break;
+    case 12:
+      menuItemHandler(2, EEPROM_ACTP, 0);
+      break;
+    case 13:
+      menuItemHandler(6, EEPROM_BDRT, 0);
+      break;
+    case 14:
+      menuItemHandler(2, EEPROM_ENTS, 0);
+      break;
+    case 15:
+      menuItemHandler(39, EEPROM_TMZ, 0);
+      break;
+    default:
+      break;
     }
   }
 
@@ -701,56 +704,56 @@ void buzzing() {
 void checkEncoder() {
   ClickEncoder::Button b = encoder->getButton();
   switch (b) {
-    case ClickEncoder::Held:
+  case ClickEncoder::Held:
 
-      if (digitalRead(BTN) == HIGH) {
-        if (ms_active == false && ms_on == false) {
-          ms_on = true;
-        }
-      } else {
-        if (menu_true == 0 && ms_active == false) {
-          menu_true = 1;
-          buzzer_set = 1;
-          menuEvent();
-          display_time_true = 0;
-          formatOutput(value, 255, 255, 0, 0);
-          setOutputs(register_output_1, register_output_2);
-        }
+    if (digitalRead(BTN) == HIGH) {
+      if (ms_active == false && ms_on == false) {
+        ms_on = true;
       }
-
-      break;
-    case ClickEncoder::DoubleClicked:
-
-      if (menu_true == 1 && menu_item_active == 1 && p_once == 0) {
+    } else {
+      if (menu_true == 0 && ms_active == false) {
+        menu_true = 1;
         buzzer_set = 1;
-        p_save = 1;
-        p_once = 1;
-
-      }
-
-      if (menu_true == 1 && menu_item_active == 0) {
-        menu_item_active = 1;
-        buzzer_set = 1;
-        menu_item = encValueMenu;
         menuEvent();
-        encMovement = 0;
-        formatOutput(menu_item, 255, 00, 0, 0);
+        display_time_true = 0;
+        formatOutput(value, 255, 255, 0, 0);
         setOutputs(register_output_1, register_output_2);
       }
+    }
 
-      if (ms_active == true && msbOnce == false) {
-        msbOnce = true;
-      }
+    break;
+  case ClickEncoder::DoubleClicked:
 
-      break;
-    case ClickEncoder::Clicked:
+    if (menu_true == 1 && menu_item_active == 1 && p_once == 0) {
+      buzzer_set = 1;
+      p_save = 1;
+      p_once = 1;
 
-      if (mstPointer <= 2) {
-        mstPointer++;
-        mstPointerChange = true;
-      }
+    }
 
-      break;
+    if (menu_true == 1 && menu_item_active == 0) {
+      menu_item_active = 1;
+      buzzer_set = 1;
+      menu_item = encValueMenu;
+      menuEvent();
+      encMovement = 0;
+      formatOutput(menu_item, 255, 00, 0, 0);
+      setOutputs(register_output_1, register_output_2);
+    }
+
+    if (ms_active == true && msbOnce == false) {
+      msbOnce = true;
+    }
+
+    break;
+  case ClickEncoder::Clicked:
+
+    if (mstPointer <= 2) {
+      mstPointer++;
+      mstPointerChange = true;
+    }
+
+    break;
 
   }
 }
@@ -762,41 +765,41 @@ uint32_t DST_calculation(unsigned long inputTime) {
   uint32_t daylightSavingValue = 0;
   switch (DST_value) {
 
-    case 1:
-      daylightSavingValue = inputTime;
-      break;
-    case 2:
-      daylightSavingValue = inputTime + 3600;
-      break;
-    case 3:
-      daylightSavingValue = tzeur.toLocal(inputTime, &tcr);
-      break;
-    case 4:
-      daylightSavingValue = tzusa.toLocal(inputTime, &tcr);
-      break;
-    case 5:
-      daylightSavingValue = tzaus.toLocal(inputTime, &tcr);
-      break;
-    case 6:
-      daylightSavingValue = tznzl.toLocal(inputTime, &tcr);
-      break;
-    case 7:
-      daylightSavingValue = tzbra.toLocal(inputTime, &tcr);
-      break;
-    case 8:
-      daylightSavingValue = tzchl.toLocal(inputTime, &tcr);
-      break;
-    case 9:
-      daylightSavingValue = tzmex.toLocal(inputTime, &tcr);
-      break;
-    case 10:
-      daylightSavingValue = tzfdj.toLocal(inputTime, &tcr);
-      break;
-    case 11:
-      daylightSavingValue = tzpar.toLocal(inputTime, &tcr);
-      break;
-    case 12:
-      daylightSavingValue = tzjor.toLocal(inputTime, &tcr);
+  case 1:
+    daylightSavingValue = inputTime;
+    break;
+  case 2:
+    daylightSavingValue = inputTime + 3600;
+    break;
+  case 3:
+    daylightSavingValue = tzeur.toLocal(inputTime, &tcr);
+    break;
+  case 4:
+    daylightSavingValue = tzusa.toLocal(inputTime, &tcr);
+    break;
+  case 5:
+    daylightSavingValue = tzaus.toLocal(inputTime, &tcr);
+    break;
+  case 6:
+    daylightSavingValue = tznzl.toLocal(inputTime, &tcr);
+    break;
+  case 7:
+    daylightSavingValue = tzbra.toLocal(inputTime, &tcr);
+    break;
+  case 8:
+    daylightSavingValue = tzchl.toLocal(inputTime, &tcr);
+    break;
+  case 9:
+    daylightSavingValue = tzmex.toLocal(inputTime, &tcr);
+    break;
+  case 10:
+    daylightSavingValue = tzfdj.toLocal(inputTime, &tcr);
+    break;
+  case 11:
+    daylightSavingValue = tzpar.toLocal(inputTime, &tcr);
+    break;
+  case 12:
+    daylightSavingValue = tzjor.toLocal(inputTime, &tcr);
   }
 
   return daylightSavingValue;
@@ -810,26 +813,26 @@ long TMZ_calculation() {
 void initBulbs() {
   int BM = readEEPROM(STORAGE_ADDRESS, EEPROM_BM);
   switch (BM) {
-    case 1:
-      bulbMode = 0; //Both Neon Bulbs OFF
-      bulbOne = 0;
-      bulbTwo = 0;
-      break;
-    case 2:
-      bulbMode = 1; //Both Neon Bulbs ON (continous)
-      bulbOne = 1;
-      bulbTwo = 1;
-      break;
-    case 3:
-      bulbMode = 2; //Neon Bulbs Change each second
-      break;
-    case 4:
-      bulbMode = 3; //both Neon Bulbs blink reversely
-      bulbOne = 1;
-      bulbTwo = 0;
-      break;
-    default:
-      bulbMode = 0;
+  case 1:
+    bulbMode = 0; //Both Neon Bulbs OFF
+    bulbOne = 0;
+    bulbTwo = 0;
+    break;
+  case 2:
+    bulbMode = 1; //Both Neon Bulbs ON (continous)
+    bulbOne = 1;
+    bulbTwo = 1;
+    break;
+  case 3:
+    bulbMode = 2; //Neon Bulbs Change each second
+    break;
+  case 4:
+    bulbMode = 3; //both Neon Bulbs blink reversely
+    bulbOne = 1;
+    bulbTwo = 0;
+    break;
+  default:
+    bulbMode = 0;
 
   }
 
@@ -851,14 +854,14 @@ void bulbHandler() {
     byte bulbHelperTwo = bulbTwo << 1;
     int bulbHelper = bulbHelperOne | bulbHelperTwo;
     switch (bulbHelper) {
-      case 1:
-        bulbOne = 0;
-        bulbTwo = 1;
-        break;
-      case 2:
-        bulbOne = 1;
-        bulbTwo = 0;
-        break;
+    case 1:
+      bulbOne = 0;
+      bulbTwo = 1;
+      break;
+    case 2:
+      bulbOne = 1;
+      bulbTwo = 0;
+      break;
     }
   }
 
@@ -919,56 +922,56 @@ void setLedColor(int preset, bool hasDelay) {
   //https://forums.adafruit.com/viewtopic.php?f=8&t=80684
 
   switch (preset) {
-    case 1:
-      setLed(0, 0, 0, hasDelay); // OFF
-      break;
-    case 2:
-      setLed(0, 255, 0, hasDelay); // Full Green
-      break;
-    case 3:
-      setLed(0, 0, 255, hasDelay); // Full Green
-      break;
-    case 4:
-      setLed(255, 0, 0, hasDelay); // Full Red
-      break;
-    case 5:
-      setLed(255, 255, 0, hasDelay); // Full Yellow
-      break;
-    case 6:
-      setLed(255, 255, 255, hasDelay); // Full White
-      break;
-    case 7:
-      setLed(0, 255, 255, hasDelay); //  Turquoise
-      break;
-    case 8:
-      setLed(51, 0, 255, hasDelay); // Dark Blue
-      break;
-    case 9:
-      setLed(204, 0, 102, hasDelay); // Dark Red
-      break;
-    case 10:
-      setLed(102, 204, 0, hasDelay); // Dark Green
-      break;
-    case 11:
-      setLed(153, 0, 255, hasDelay); // Purple-like
-      break;
-    case 12:
-      setLed(0, 255, 153, hasDelay); // Neon-Green
-      break;
-    case 13:
-      setLed(255, 102, 0, hasDelay); // Orange
-      break;
-    case 14:
-      setLed(255, 153, 0, hasDelay); // Another Orange
-      break;
-    case 15:
-      setLed(51, 255, 255, hasDelay); // Neon Blue
-      break;
-    case 16:
-      setLed(255, 0, 255, hasDelay); // Sort of Red
-      break;
-    default:
-      break;
+  case 1:
+    setLed(0, 0, 0, hasDelay); // OFF
+    break;
+  case 2:
+    setLed(0, 255, 0, hasDelay); // Full Green
+    break;
+  case 3:
+    setLed(0, 0, 255, hasDelay); // Full Green
+    break;
+  case 4:
+    setLed(255, 0, 0, hasDelay); // Full Red
+    break;
+  case 5:
+    setLed(255, 255, 0, hasDelay); // Full Yellow
+    break;
+  case 6:
+    setLed(255, 255, 255, hasDelay); // Full White
+    break;
+  case 7:
+    setLed(0, 255, 255, hasDelay); //  Turquoise
+    break;
+  case 8:
+    setLed(51, 0, 255, hasDelay); // Dark Blue
+    break;
+  case 9:
+    setLed(204, 0, 102, hasDelay); // Dark Red
+    break;
+  case 10:
+    setLed(102, 204, 0, hasDelay); // Dark Green
+    break;
+  case 11:
+    setLed(153, 0, 255, hasDelay); // Purple-like
+    break;
+  case 12:
+    setLed(0, 255, 153, hasDelay); // Neon-Green
+    break;
+  case 13:
+    setLed(255, 102, 0, hasDelay); // Orange
+    break;
+  case 14:
+    setLed(255, 153, 0, hasDelay); // Another Orange
+    break;
+  case 15:
+    setLed(51, 255, 255, hasDelay); // Neon Blue
+    break;
+  case 16:
+    setLed(255, 0, 255, hasDelay); // Sort of Red
+    break;
+  default:
+    break;
   }
 }
 
@@ -1180,24 +1183,24 @@ void timeService() {
 void cycleHandler() {
 
   switch (cyclemode) {
-    case 1:
-      cycle_display_1();
-      break;
-    case 2:
-      cycle_display_2();
-      break;
-    case 3:
-      cycle_display_3();
-      break;
-    case 4:
-      cycle_display_4();
-      break;
-    case 5:
-      cycle_display_5();
-      break;
-    default:
-      cycle_display_1();
-      break;
+  case 1:
+    cycle_display_1();
+    break;
+  case 2:
+    cycle_display_2();
+    break;
+  case 3:
+    cycle_display_3();
+    break;
+  case 4:
+    cycle_display_4();
+    break;
+  case 5:
+    cycle_display_5();
+    break;
+  default:
+    cycle_display_1();
+    break;
   }
 
 }
@@ -1267,13 +1270,13 @@ void cycle_display_3() {
 
         if (j < 3) {
           cd3_oval1 = 2147483648UL
-                      >> ((unsigned long) cd3_i + (10 * j));
+              >> ((unsigned long) cd3_i + (10 * j));
           cd3_oval2 = 0;
 
         };
         if (j > 2) {
           cd3_oval2 = 2147483648UL
-                      >> ((unsigned long) cd3_i + (10 * (j - 3)));
+              >> ((unsigned long) cd3_i + (10 * (j - 3)));
           cd3_oval1 = 0;
         };
 
@@ -1379,7 +1382,7 @@ void setSerialTime() {
       int Syear = atoi(SIyr);      //0-99
 
       RTCsetTime(Ssecond, Sminute, Shour, SweekDay, SmonthDay, Smonth,
-                 Syear);
+          Syear);
       printTime();
       //      printTime();        <-- twice ???
 
@@ -1400,8 +1403,8 @@ void setSerialTime() {
 }
 
 void RTCsetTime(byte setSeconds, byte setMinutes, byte setHours,
-                byte setWeekday, byte setMonthday, byte setMonth, int setYear) // forward declaration
-{
+    byte setWeekday, byte setMonthday, byte setMonth, int setYear) // forward declaration
+    {
   //This function sends a given time to the RTC module and updates the day of the last setting.
 
   //Send data:
