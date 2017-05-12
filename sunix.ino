@@ -593,7 +593,7 @@ void menuHandler() {
 
 
 void initTimeSync() {
-  int enTsEval = readEEPROM(STORAGE_ADDRESS, EEPROM_ENTS);
+  byte enTsEval = readEEPROM(STORAGE_ADDRESS, EEPROM_ENTS);
   if (enTsEval == 2) { // <-- semi-colon removed!
     enTimeSync = 1;
   }
@@ -811,7 +811,7 @@ long TMZ_calculation() {
 }
 
 void initBulbs() {
-  int BM = readEEPROM(STORAGE_ADDRESS, EEPROM_BM);
+  byte BM = readEEPROM(STORAGE_ADDRESS, EEPROM_BM);
   switch (BM) {
   case 1:
     bulbMode = 0; //Both Neon Bulbs OFF
@@ -852,7 +852,7 @@ void bulbHandler() {
   if (bulbMode == 3) {
     byte bulbHelperOne = bulbOne;
     byte bulbHelperTwo = bulbTwo << 1;
-    int bulbHelper = bulbHelperOne | bulbHelperTwo;
+    byte bulbHelper = bulbHelperOne | bulbHelperTwo;
     switch (bulbHelper) {
     case 1:
       bulbOne = 0;
@@ -898,13 +898,13 @@ void checkSerial() {
 
 void initColor(bool hasDelay) {
   //Function for initialisiation of LED illumination, from a unkown state. This will read from EEPROM
-  int color = readEEPROM(STORAGE_ADDRESS, EEPROM_LED);
+  byte color = readEEPROM(STORAGE_ADDRESS, EEPROM_LED);
   setLedColor(color, hasDelay);
   initBrightness();
 }
 
 void initBrightness() {
-  int bright = (255 / 100) * readEEPROM(STORAGE_ADDRESS, EEPROM_BRIGHT);
+  byte bright = (255 / 100) * readEEPROM(STORAGE_ADDRESS, EEPROM_BRIGHT);
   strip.setBrightness(bright);
   strip.show();
 }
@@ -975,7 +975,7 @@ void setLedColor(int preset, bool hasDelay) {
   }
 }
 
-void setLed(int r, int g, int b, bool hasDelay) {
+void setLed(byte r, byte g, byte b, bool hasDelay) {
   //Function to set every pixel of the LED illumination. If hasDelay is true, a small delay will be added between each pixel to show a lightning bar effect
   red = r;
   green = g;
@@ -1224,8 +1224,8 @@ void printTime() {
 void cycle_display_1() {
 
   //*******************Simply cycle all digits 3times from 0-9****************
-  for (int t = 0; t < 3; t++) {
-    for (int i = 0; i < 10; i++) {
+  for (byte t = 0; t < 3; t++) {
+    for (byte i = 0; i < 10; i++) {
       formatOutput(i * 11, i * 11, i * 11, bulbOne, bulbTwo);
       setOutputs(register_output_1, register_output_2);
       delay(30);
@@ -1236,8 +1236,8 @@ void cycle_display_1() {
 void cycle_display_2() {
 
   //*****************Cycle all digits 3times from 0-9 with gaps (off) between digits**************
-  for (int t = 0; t < 3; t++) {
-    for (int i = 0; i < 10; i++) {
+  for (byte t = 0; t < 3; t++) {
+    for (byte i = 0; i < 10; i++) {
       formatOutput(i * 11, i * 11, i * 11, bulbOne, bulbTwo);
       setOutputs(register_output_1, register_output_2);
       delay(20);
@@ -1251,8 +1251,8 @@ void cycle_display_2() {
 void cycle_display_3() {
 
   //*******************Shift digits 0-9 from left to right****************
-  for (int t = 0; t < 2; t++) {
-    for (int i = 0; i < 10; i++) {
+  for (byte t = 0; t < 2; t++) {
+    for (byte i = 0; i < 10; i++) {
 
       int cd3_i = 0;
 
@@ -1261,7 +1261,7 @@ void cycle_display_3() {
       if (i > 0)
         cd3_i = i - 1;
 
-      for (int j = 0; j < 6; j++) {
+      for (byte j = 0; j < 6; j++) {
 
         unsigned long cd3_oval1 = 0;
         unsigned long cd3_oval2 = 0;
@@ -1290,10 +1290,10 @@ void cycle_display_3() {
 
 void cycle_display_4() {
 
-  for (int t = 0; t < 5; t++) {
+  for (byte t = 0; t < 5; t++) {
 
     if (t < 3) {
-      for (int i = 0; i < 10; i++) {
+      for (byte i = 0; i < 10; i++) {
         formatOutput(i * 11, i * 11, i * 11, bulbOne, bulbTwo);
         setOutputs(register_output_1, register_output_2);
         delay(30);
@@ -1301,14 +1301,14 @@ void cycle_display_4() {
     }
     if (t == 3) {
 
-      for (int i = 0; i < 10; i++) {
+      for (byte i = 0; i < 10; i++) {
         formatOutput(i * 11, i * 11, second(), bulbOne, bulbTwo);
         setOutputs(register_output_1, register_output_2);
         delay(30);
       }
     }
     if (t == 4) {
-      for (int i = 0; i < 10; i++) {
+      for (byte i = 0; i < 10; i++) {
         formatOutput(i * 11, minute(), second(), bulbOne, bulbTwo);
         setOutputs(register_output_1, register_output_2);
         delay(30);
@@ -1323,10 +1323,10 @@ void cycle_display_4() {
 void cycle_display_5() {
 
   //************************Pick a random number for each digit for 50 times**********
-  for (int i = 0; i < 50; i++) {
-    int cval4_1 = random(0, 99);
-    int cval4_2 = random(0, 99);
-    int cval4_3 = random(0, 99);
+  for (byte i = 0; i < 50; i++) {
+    byte cval4_1 = random(0, 99);
+    byte cval4_2 = random(0, 99);
+    byte cval4_3 = random(0, 99);
     formatOutput(cval4_1, cval4_2, cval4_3, bulbOne, bulbTwo);
     setOutputs(register_output_1, register_output_2);
     delay(50);
@@ -1429,27 +1429,22 @@ void setTimeFromRTC() {
 
   //This function reads the current time in UTC saved in the RTC Module and sets the arduino time.
 
-  //collect data
+
   Wire.beginTransmission(RTC_ADDRESS);
   Wire.write(0x00);
   Wire.endTransmission();
   Wire.requestFrom(RTC_ADDRESS, 7);
-  byte rtcSeconds = BcdToDec(Wire.read());
-  byte rtcMinutes = BcdToDec(Wire.read());
-  byte rtcHours = BcdToDec(Wire.read());
-  bool dummyDay = BcdToDec(Wire.read());
-  byte rtcDay = BcdToDec(Wire.read());
-  byte rtcMonth = BcdToDec(Wire.read());
-  int rtcYear = BcdToDec(Wire.read());
 
-  //Fill tm elements
+  //Fill time elements. 
+  tm.Second = BcdToDec(Wire.read());
+  tm.Minute = BcdToDec(Wire.read());
+  tm.Hour = BcdToDec(Wire.read());
+  bool dummy = BcdToDec(Wire.read());
+  tm.Day = BcdToDec(Wire.read());
+  tm.Month = BcdToDec(Wire.read());
+  tm.Year = BcdToDec(Wire.read())+30;
 
-  tm.Second = rtcSeconds;
-  tm.Hour = rtcHours;
-  tm.Minute = rtcMinutes;
-  tm.Day = rtcDay;
-  tm.Month = rtcMonth;
-  tm.Year = (rtcYear + 30);
+ 
 
   //convert rtc time to timestamp
   uint32_t tempTime = makeTime(tm) + TMZ_calculation();
